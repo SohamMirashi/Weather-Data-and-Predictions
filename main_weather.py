@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-APIkey = "c1a5392fbefd2b709742dd352902cb58"  # put your key here
+APIkey = "c1a5392fbefd2b709742dd352902cb58"  
 
 # ---- MongoDB connection ----
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
@@ -75,7 +75,7 @@ def get_coordinates(
         coordinates_collection.insert_one({
             "user_id": user_id,
             "address": address,
-            "display_name": result["display_name"],  # Full address from Nominatim
+            "display_name": result["display_name"], 
             "coordinates": {"lat": result["lat"], "lon": result["lon"]},
             "provider": "nominatim",
             "created_at": datetime.utcnow(),
@@ -106,18 +106,18 @@ def get_weather(
     
     # Process the weather data to match frontend expectations
     weather_description = data["weather"][0]["description"].title()
-    weather_main = data["weather"][0]["main"].lower()  # Clear, Clouds, Rain, etc.
+    weather_main = data["weather"][0]["main"].lower() 
     temperature = round(data["main"]["temp"])
     feels_like = round(data["main"]["feels_like"])
     humidity = data["main"]["humidity"]
     cloudiness = data["clouds"]["all"]
     wind_speed = data["wind"]["speed"]
-    # Visibility in km (default to 10km if not available)
+
     visibility = data.get("visibility")
     if visibility:
-        visibility = visibility / 1000  # Convert meters to km
+        visibility = visibility / 1000  
     else:
-        visibility = 10  # Default to good visibility
+        visibility = 10  
     
     # Determine weather condition type (prioritize precipitation/storm conditions)
     weather_type = "Unknown"
@@ -150,14 +150,11 @@ def get_weather(
     elif wind_speed > 8:
         weather_type += " & 🌬️ Breezy"
     
-    # Generate comprehensive travel and weather advice
     advice = []
     
-    # Travel recommendation based on overall weather
     travel_score = 0
     travel_recommendation = ""
     
-    # Temperature scoring (ideal range: 15-25°C)
     if 18 <= temperature <= 25:
         travel_score += 3
         advice.append(f"✅ Perfect temperature for travel ({temperature}°C) - ideal weather conditions!")
@@ -170,7 +167,7 @@ def get_weather(
     elif temperature < 10:
         travel_score -= 1
         advice.append(f"❄️ Cold weather ({temperature}°C) - pack warm clothes if traveling.")
-    else:  # > 32
+    else:  
         travel_score -= 1
         advice.append(f"🔥 Hot weather ({temperature}°C) - stay hydrated and avoid peak sun hours.")
     
