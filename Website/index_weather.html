@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather & Location Tester</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app weather-app">
+    <header class="weather-header">
+      <h1>🌍 Weather & Location Tester</h1>
+      <p class="subtitle">Convert addresses to coordinates and get real-time weather with helpful tips.</p>
+    </header>
+
+    <!-- Address to Coordinates -->
+    <section class="card">
+      <h2 class="card-title">Address ➝ Coordinates</h2>
+      <div class="form-grid">
+        <input type="text" id="addressInput" placeholder="Enter address (e.g. MIT WPU)" />
+        <button class="btn" onclick="fetchCoordinates()">Get Coordinates</button>
+      </div>
+      <pre id="coordsOutput" class="code"></pre>
+    </section>
+
+    <!-- Coordinates to Weather -->
+    <section class="card">
+      <h2 class="card-title">Coordinates ➝ Weather</h2>
+      <div class="form-grid two-cols">
+        <input type="text" id="latInput" placeholder="Latitude" />
+        <input type="text" id="lonInput" placeholder="Longitude" />
+        <button class="btn full" onclick="fetchWeather()">Get Weather</button>
+      </div>
+      <pre id="weatherOutput" class="code"></pre>
+    </section>
+  </div>
+
+<script>
+  const backendUrl = "http://127.0.0.1:8001"; // FastAPI backend URL
+
+  // Store user_id from URL (optional) so sign-in page can redirect with ?user_id=123
+  (function bootstrapUserId() {
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('user_id');
+    if (uid) {
+      try { localStorage.setItem('user_id', uid); } catch (e) {}
+    }
+  })();
+
+  function getUserId() {
+    try { return localStorage.getItem('user_id') || ''; } catch (e) { return ''; }
+  }
+
+  async function fetchCoordinates() {
+    const address = document.getElementById("addressInput").value;
+    const userId = getUserId();
+    const url = `${backendUrl}/geocode/?address=${encodeURIComponent(address)}${userId ? `&user_id=${encodeURIComponent(userId)}` : ''}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.error) {
+      document.getElementById("coordsOutput").textContent = data.error;
+      return;
+    }
+    // Show only the derived human-readable address
+    document.getElementById("coordsOutput").textContent = data.display_name || "Address found";
+    // Still populate inputs to help with the next step
+    document.getElementById("latInput").value = data.lat;
+    document.getElementById("lonInput").value = data.lon;
+  }
+
+  async function fetchWeather() {
+    const lat = document.getElementById("latInput").value;
+    const lon = document.getElementById("lonInput").value;
+    const userId = getUserId();
+    const address = document.getElementById("addressInput").value;
+    const url = `${backendUrl}/weather/?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}${userId ? `&user_id=${encodeURIComponent(userId)}` : ''}${address ? `&address=${encodeURIComponent(address)}` : ''}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.error) {
+      document.getElementById("weatherOutput").textContent = data.error;
+      return;
+    }
+
+    let output = `
+${data.weather_type || data.weather_description}
+
+🌡 Temperature: ${data.temperature} °C (Feels like ${data.feels_like} °C)
+💧 Humidity: ${data.humidity}%
+☁ Cloudiness: ${data.cloudiness}%
+💨 Wind Speed: ${data.wind_speed} m/s
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 Travel & Weather Advice:
+`;
+
+    data.advice.forEach((item) => {
+      output += `${item}\n`;
+    });
+
+    document.getElementById("weatherOutput").textContent = output;
+  }
+</script>
+</body>
+</html>
